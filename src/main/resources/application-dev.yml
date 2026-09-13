@@ -1,0 +1,19 @@
+# Perfil de desarrollo: emisor de identidad local, sin depender de Azure.
+#
+# El BFF genera un par de claves RSA al arrancar, publica su JWK set en /dev/jwks y firma
+# tokens en /dev/token. El resolver multi-emisor lo trata como un emisor mas, asi que la ruta
+# de codigo es la misma que en la nube.
+#
+# Los emisores reales quedan sin configurar en este perfil: no hacen falta para trabajar local.
+
+andesstay:
+  tenants:
+    dev:
+      issuer-uri: http://localhost:8080/dev
+      audiences:
+        - api://andesstay-dev
+      jwk-set-uri: http://localhost:8080/dev/jwks
+
+logging:
+  level:
+    org.springframework.security: DEBUG

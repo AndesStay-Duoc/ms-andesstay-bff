@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: ms-andesstay-bff
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Emisores de identidad aceptados. Todo viene del entorno: ningun identificador
+# de tenant vive en el codigo ni en un archivo versionado.
+#
+# El personal y los huespedes tienen app registrations distintas, y por lo tanto audiences
+# distintas. Si ambas viven en el MISMO tenant, van en una sola entrada con las dos audiences,
+# como abajo. Si algun dia quedan en tenants separados, se agrega una segunda entrada con su
+# propio issuer-uri; el codigo no cambia.
+#
+# Los valores se obtienen siguiendo docs/guias/azure-identidad.md del repositorio infra.
+andesstay:
+  tenants:
+    entra:
+      issuer-uri: ${JWT_ISSUER:}
+      audiences:
+        - ${JWT_AUDIENCE_STAFF:}
+        - ${JWT_AUDIENCE_GUEST:}
+
+# URLs de los microservicios de dominio, para cuando el BFF empiece a delegar.
+andesstay-servicios:
+  reservations: ${SVC_RESERVATIONS_URL:http://localhost:8081}
+  catalog: ${SVC_CATALOG_URL:http://localhost:8082}
+  audit: ${SVC_AUDIT_URL:http://localhost:8084}
+  report: ${SVC_REPORT_URL:http://localhost:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
