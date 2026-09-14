@@ -1,44 +1,68 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: ms-andesstay-bff
 
-server:
-  port: ${SERVER_PORT:8080}
+  # ── Validación del JWT emitido por Azure AD (Entra ID) ─────────────────────
+  # Los valores por defecto son identificadores públicos del App Registration
+  # (no son secretos); en EC2 se sobrescriben con variables de entorno.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # iss esperado en tokens v2.0
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:055d11d1-8ae0-4221-a6f7-b50be0a623b4}/v2.0
+          # Claves públicas para verificar la firma (se descargan en la primera petición)
+          jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:055d11d1-8ae0-4221-a6f7-b50be0a623b4}/discovery/v2.0/keys
+          # aud aceptados: Azure AD envía "api://<clientId>" o el GUID del clientId
+          # según requestedAccessTokenVersion del manifest.
+          audiences:
+            - api://${AZURE_CLIENT_ID:704a544f-3d92-44f5-aef9-8559574cff34}
+            - ${AZURE_CLIENT_ID:704a544f-3d92-44f5-aef9-8559574cff34}
 
-# Emisores de identidad aceptados. Todo viene del entorno: ningun identificador
-# de tenant vive en el codigo ni en un archivo versionado.
-#
-# El personal y los huespedes tienen app registrations distintas, y por lo tanto audiences
-# distintas. Si ambas viven en el MISMO tenant, van en una sola entrada con las dos audiences,
-# como abajo. Si algun dia quedan en tenants separados, se agrega una segunda entrada con su
-# propio issuer-uri; el codigo no cambia.
-#
-# Los valores se obtienen siguiendo docs/guias/azure-identidad.md del repositorio infra.
+  cloud:
+    gateway:
+      # Spring Cloud Gateway reenvía la cabecera Authorization tal cual al
+      # microservicio downstream, que vuelve a validar el JWT (defensa en profundidad).
+      routes:
+        # ── Reservations ──────────────────────────────────────────────────────
+        - id: reservations
+          uri: ${RESERVATIONS_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/reservations/**
+
+        # ── Catalog ───────────────────────────────────────────────────────────
+        - id: catalog
+          uri: ${CATALOG_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/catalog/**
+
+        # ── Report ────────────────────────────────────────────────────────────
+        - id: report
+          uri: ${REPORT_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/report/**
+
+        # ── Audit ─────────────────────────────────────────────────────────────
+        - id: audit
+          uri: ${AUDIT_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/audit/**
+
 andesstay:
-  tenants:
-    entra:
-      issuer-uri: ${JWT_ISSUER:}
-      audiences:
-        - ${JWT_AUDIENCE_STAFF:}
-        - ${JWT_AUDIENCE_GUEST:}
-
-# URLs de los microservicios de dominio, para cuando el BFF empiece a delegar.
-andesstay-servicios:
-  reservations: ${SVC_RESERVATIONS_URL:http://localhost:8081}
-  catalog: ${SVC_CATALOG_URL:http://localhost:8082}
-  audit: ${SVC_AUDIT_URL:http://localhost:8084}
-  report: ${SVC_REPORT_URL:http://localhost:8085}
+  security:
+    # Orígenes permitidos por CORS (separados por coma). Agregar el dominio de producción.
+    cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
-  endpoint:
-    health:
-      probes:
-        enabled: true
 
 logging:
   level:
-    org.springframework.security: ${LOG_LEVEL_SECURITY:INFO}
+    org.springframework.cloud.gateway: INFO
+    org.springframework.security: INFO
