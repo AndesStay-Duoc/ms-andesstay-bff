@@ -16,8 +16,8 @@ spring:
           issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:055d11d1-8ae0-4221-a6f7-b50be0a623b4}/v2.0
           # Claves públicas para verificar la firma (se descargan en la primera petición)
           jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:055d11d1-8ae0-4221-a6f7-b50be0a623b4}/discovery/v2.0/keys
-          # aud aceptados: Azure AD envía "api://<clientId>" o el GUID del clientId
-          # según requestedAccessTokenVersion del manifest.
+          # aud aceptados: los tokens v1 traen "api://<clientId>" y los v2 el GUID.
+          # El issuer de arriba es el de v2: el manifest debe fijar requestedAccessTokenVersion = 2.
           audiences:
             - api://${AZURE_CLIENT_ID:704a544f-3d92-44f5-aef9-8559574cff34}
             - ${AZURE_CLIENT_ID:704a544f-3d92-44f5-aef9-8559574cff34}
