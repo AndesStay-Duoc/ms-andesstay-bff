@@ -1,6 +1,7 @@
 package cl.andesstay.bff.config;
 
 import cl.andesstay.bff.security.AudienceValidator;
+import cl.andesstay.bff.security.AzureRolesConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
@@ -186,6 +187,7 @@ public class SecurityConfig {
     // -------------------------------------------------------------------------
     // Conversión de claims → GrantedAuthorities
     //  - "roles" → ROLE_Admin, ROLE_Operador... (permite hasRole / hasAnyRole)
+    //  - invitado autoregistrado sin roles → ROLE_Cliente (ver AzureRolesConverter)
     //  - "scp"   → SCOPE_AndesStay.Access       (permite hasAuthority('SCOPE_...'))
     // -------------------------------------------------------------------------
     @Bean
@@ -197,9 +199,7 @@ public class SecurityConfig {
 
     /** Convierte roles y scopes del token en authorities (público y estático para los tests). */
     public static Converter<Jwt, Collection<GrantedAuthority>> authoritiesConverter() {
-        JwtGrantedAuthoritiesConverter rolesConverter = new JwtGrantedAuthoritiesConverter();
-        rolesConverter.setAuthoritiesClaimName("roles");   // claim de App Roles de Azure AD
-        rolesConverter.setAuthorityPrefix("ROLE_");
+        AzureRolesConverter rolesConverter = new AzureRolesConverter();
 
         JwtGrantedAuthoritiesConverter scopesConverter = new JwtGrantedAuthoritiesConverter();
         scopesConverter.setAuthoritiesClaimName("scp");    // scopes delegados del access token

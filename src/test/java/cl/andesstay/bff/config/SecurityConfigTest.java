@@ -105,6 +105,38 @@ class SecurityConfigTest {
                 .jsonPath("$.authorities[?(@ == 'SCOPE_AndesStay.Access')]").exists();
     }
 
+    private static JwtMutator jwtDeInvitadoAutoregistrado() {
+        return SecurityMockServerConfigurers.mockJwt()
+                .jwt(jwt -> jwt
+                        .subject("huesped-456")
+                        .claim("acct", 1L)
+                        .claim("email", "huesped@gmail.com")
+                        .claim("scp", "AndesStay.Access"))
+                .authorities(SecurityConfig.authoritiesConverter());
+    }
+
+    @Test
+    void invitadoAutoregistrado_enMe_recibeRolClienteEfectivo() {
+        client.mutateWith(jwtDeInvitadoAutoregistrado())
+                .get().uri("/api/me")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.roles").isEmpty()
+                .jsonPath("$.effectiveRoles[0]").isEqualTo("Cliente")
+                .jsonPath("$.email").isEqualTo("huesped@gmail.com")
+                .jsonPath("$.acct").isEqualTo(1)
+                .jsonPath("$.authorities[?(@ == 'ROLE_Cliente')]").exists();
+    }
+
+    @Test
+    void invitadoAutoregistrado_enReporteria_devuelve403() {
+        client.mutateWith(jwtDeInvitadoAutoregistrado())
+                .get().uri("/api/report/kpis")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
     @Test
     void tokenSinRolNiScope_enMe_devuelve403() {
         client.mutateWith(SecurityMockServerConfigurers.mockJwt()

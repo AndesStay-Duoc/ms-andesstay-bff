@@ -14,8 +14,10 @@ import java.util.Set;
  * Valida que el claim "aud" del JWT contenga al menos una de las audiencias
  * aceptadas por el BFF.
  *
- * Azure AD emite el aud como "api://<clientId>" o como el GUID del clientId
- * dependiendo de requestedAccessTokenVersion en el manifest, por eso se aceptan ambos.
+ * Azure AD emite el aud según requestedAccessTokenVersion del manifest: los
+ * tokens v1 traen "api://<clientId>" y los v2 traen el GUID del clientId. Se
+ * aceptan ambos formatos, pero el issuer configurado es el de v2, por lo que la
+ * app registration debe fijar requestedAccessTokenVersion = 2.
  */
 public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
