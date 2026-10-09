@@ -21,7 +21,7 @@ import java.util.Map;
  * o Postman qué roles y scopes llegan al backend.
  */
 @RestController
-@RequestMapping("/api/me")
+@RequestMapping("/v1/api/me")
 public class MeController {
 
     @GetMapping
