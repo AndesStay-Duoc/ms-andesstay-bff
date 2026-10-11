@@ -101,15 +101,20 @@ public class SecurityConfig {
                 .pathMatchers(HttpMethod.GET, "/api/me").authenticated()
 
                 // Reservas
-                //  - Cambiar estado: solo Recepcionista (Operador) y Admin
+                //  - Cambiar estado: Recepcionista (Operador) y Admin para cualquier transicion.
+                //    El Cliente tambien pasa, pero ms-andesstay-reservations le limita a cancelar
+                //    SU PROPIA reserva y solo mientras este en CREADA. El BFF no puede hacer esa
+                //    comprobacion: no sabe de quien es la reserva ni en que estado esta.
                 .pathMatchers(HttpMethod.PUT, "/api/reservations/*/status")
-                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR)
+                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Crear: Huésped (Cliente), Recepcionista y Admin
                 .pathMatchers(HttpMethod.POST, "/api/reservations")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
-                //  - Listar con filtros: Admin y Operador
+                //  - Listar: Admin y Operador ven todas; el Cliente recibe SOLO las suyas, que
+                //    filtra ms-andesstay-reservations por el sub de su token. Antes quedaba fuera,
+                //    y la pantalla de reservas se le abria en el frontend para dar 403.
                 .pathMatchers(HttpMethod.GET, "/api/reservations")
-                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR)
+                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Detalle: todos los roles (ms-reservations valida que el Cliente sea dueño)
                 .pathMatchers(HttpMethod.GET, "/api/reservations/*")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE, ROLE_AUDITOR)
@@ -119,9 +124,13 @@ public class SecurityConfig {
                 // Catálogo
                 //  - Endpoints internos entre microservicios: nunca expuestos por el BFF
                 .pathMatchers("/api/catalog/internal/**").denyAll()
-                //  - Lectura: Admin y Operador
+                //  - Lectura: Admin, Operador y Cliente.
+                //    El huesped necesita ver el catalogo para elegir que reservar. Se abre ahora
+                //    que ms-andesstay-catalog usa AzureRolesConverter y deriva ROLE_Cliente: con
+                //    su converter simple anterior, un Cliente llegaba autenticado pero sin
+                //    authorities y recibia 403 del propio servicio.
                 .pathMatchers(HttpMethod.GET, "/api/catalog/**")
-                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR)
+                    .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Escritura (POST/PUT/DELETE): solo Admin
                 .pathMatchers("/api/catalog/**")
                     .hasRole(ROLE_ADMIN)
