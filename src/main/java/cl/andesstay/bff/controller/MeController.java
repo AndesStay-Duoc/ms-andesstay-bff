@@ -1,5 +1,7 @@
 package cl.andesstay.bff.controller;
 
+import cl.andesstay.bff.ApiPaths;
+
 import cl.andesstay.bff.security.AzureRolesConverter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,7 +23,7 @@ import java.util.Map;
  * o Postman qué roles y scopes llegan al backend.
  */
 @RestController
-@RequestMapping("/v1/api/me")
+@RequestMapping(ApiPaths.ME)
 public class MeController {
 
     @GetMapping
