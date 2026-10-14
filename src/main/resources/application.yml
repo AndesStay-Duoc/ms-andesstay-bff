@@ -31,25 +31,25 @@ spring:
         - id: reservations
           uri: ${RESERVATIONS_URL:http://localhost:8081}
           predicates:
-            - Path=/api/reservations/**
+            - Path=/api/v1/reservations/**
 
         # ── Catalog ───────────────────────────────────────────────────────────
         - id: catalog
           uri: ${CATALOG_URL:http://localhost:8082}
           predicates:
-            - Path=/api/catalog/**
+            - Path=/api/v1/catalog/**
 
         # ── Report ────────────────────────────────────────────────────────────
         - id: report
           uri: ${REPORT_URL:http://localhost:8083}
           predicates:
-            - Path=/api/report/**
+            - Path=/api/v1/report/**
 
         # ── Audit ─────────────────────────────────────────────────────────────
         - id: audit
           uri: ${AUDIT_URL:http://localhost:8084}
           predicates:
-            - Path=/api/audit/**
+            - Path=/api/v1/audit/**
 
 andesstay:
   security:

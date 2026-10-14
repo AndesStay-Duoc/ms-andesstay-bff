@@ -92,58 +92,60 @@ public class SecurityConfig {
             .authorizeExchange(auth -> auth
 
                 // Health check público (Actuator)
+                // Actuator NO lleva el prefijo /api/v1 a proposito: no es parte de la
+                // API, y ponerselo romperia el healthcheck del contenedor. Ver ApiPaths.
                 .pathMatchers("/actuator/health", "/actuator/info").permitAll()
 
                 // Preflight OPTIONS (CORS) — sin restricción
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Perfil del usuario autenticado (claims del token); @PreAuthorize en MeController
-                .pathMatchers(HttpMethod.GET, "/api/me").authenticated()
+                .pathMatchers(HttpMethod.GET, "/api/v1/me").authenticated()
 
                 // Reservas
                 //  - Cambiar estado: Recepcionista (Operador) y Admin para cualquier transicion.
                 //    El Cliente tambien pasa, pero ms-andesstay-reservations le limita a cancelar
                 //    SU PROPIA reserva y solo mientras este en CREADA. El BFF no puede hacer esa
                 //    comprobacion: no sabe de quien es la reserva ni en que estado esta.
-                .pathMatchers(HttpMethod.PUT, "/api/reservations/*/status")
+                .pathMatchers(HttpMethod.PUT, "/api/v1/reservations/*/status")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Crear: Huésped (Cliente), Recepcionista y Admin
-                .pathMatchers(HttpMethod.POST, "/api/reservations")
+                .pathMatchers(HttpMethod.POST, "/api/v1/reservations")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Listar: Admin y Operador ven todas; el Cliente recibe SOLO las suyas, que
                 //    filtra ms-andesstay-reservations por el sub de su token. Antes quedaba fuera,
                 //    y la pantalla de reservas se le abria en el frontend para dar 403.
-                .pathMatchers(HttpMethod.GET, "/api/reservations")
+                .pathMatchers(HttpMethod.GET, "/api/v1/reservations")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Detalle: todos los roles (ms-reservations valida que el Cliente sea dueño)
-                .pathMatchers(HttpMethod.GET, "/api/reservations/*")
+                .pathMatchers(HttpMethod.GET, "/api/v1/reservations/*")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE, ROLE_AUDITOR)
-                .pathMatchers("/api/reservations/**")
+                .pathMatchers("/api/v1/reservations/**")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR)
 
                 // Catálogo
                 //  - Endpoints internos entre microservicios: nunca expuestos por el BFF
-                .pathMatchers("/api/catalog/internal/**").denyAll()
+                .pathMatchers("/api/v1/catalog/internal/**").denyAll()
                 //  - Lectura: Admin, Operador y Cliente.
                 //    El huesped necesita ver el catalogo para elegir que reservar. Se abre ahora
                 //    que ms-andesstay-catalog usa AzureRolesConverter y deriva ROLE_Cliente: con
                 //    su converter simple anterior, un Cliente llegaba autenticado pero sin
                 //    authorities y recibia 403 del propio servicio.
-                .pathMatchers(HttpMethod.GET, "/api/catalog/**")
+                .pathMatchers(HttpMethod.GET, "/api/v1/catalog/**")
                     .hasAnyRole(ROLE_ADMIN, ROLE_OPERADOR, ROLE_CLIENTE)
                 //  - Escritura (POST/PUT/DELETE): solo Admin
-                .pathMatchers("/api/catalog/**")
+                .pathMatchers("/api/v1/catalog/**")
                     .hasRole(ROLE_ADMIN)
 
                 // Reportería: solo Admin, solo lectura
-                .pathMatchers(HttpMethod.GET, "/api/report/**")
+                .pathMatchers(HttpMethod.GET, "/api/v1/report/**")
                     .hasRole(ROLE_ADMIN)
-                .pathMatchers("/api/report/**").denyAll()
+                .pathMatchers("/api/v1/report/**").denyAll()
 
                 // Auditoría: Admin y Auditor, solo lectura
-                .pathMatchers(HttpMethod.GET, "/api/audit/**")
+                .pathMatchers(HttpMethod.GET, "/api/v1/audit/**")
                     .hasAnyRole(ROLE_ADMIN, ROLE_AUDITOR)
-                .pathMatchers("/api/audit/**").denyAll()
+                .pathMatchers("/api/v1/audit/**").denyAll()
 
                 // Cualquier otra ruta requiere autenticación
                 .anyExchange().authenticated()
